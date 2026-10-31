@@ -1,0 +1,54 @@
+# VLM on Pi: the vision model and the app, side by side.
+#   docker compose up -d --build      then open http://<pi-address>:8000
+# Settings come from .env (see .env.example).
+services:
+  llm:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    command:
+      - -m
+      - /models/LFM2.5-VL-450M-Q4_0.gguf
+      - --mmproj
+      - /models/mmproj-LFM2.5-VL-450m-Q8_0.gguf
+      - -c
+      - "4096"
+      - -np
+      - "1"
+      - -t
+      - "4"
+      - --cache-ram
+      - "0"
+      - --no-webui
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --image-max-tokens
+      - "${IMAGE_MAX_TOKENS:-256}"
+    volumes:
+      - ./models:/models:ro
+    restart: unless-stopped
+
+  app:
+    build: .
+    environment:
+      LLM_URL: http://llm:8080
+      CAMERA: ${CAMERA:-/dev/video0}
+      SCAN_EVERY_S: ${SCAN_EVERY_S:-180}
+      IMAGE_SIZE: ${IMAGE_SIZE:-512}
+      KEEP_DAYS: ${KEEP_DAYS:-7}
+      LIVE_WIDTH: ${LIVE_WIDTH:-640}
+      LIVE_FPS: ${LIVE_FPS:-10}
+      CAMERA_CREDIT: ${CAMERA_CREDIT:-}
+      BOX_ZOOM: ${BOX_ZOOM:-1}
+    volumes:
+      - ./data:/data
+      # Webcams appear and disappear as they're plugged in, so share /dev and
+      # allow video devices (major 81) instead of naming one that may be missing.
+      - /dev:/dev
+    device_cgroup_rules:
+      - "c 81:* rmw"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - llm
+    restart: unless-stopped
