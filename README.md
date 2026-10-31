@@ -42,26 +42,6 @@ Specificity 100% (47/47), recall 68% (44/65). Every error was a miss, mostly
 small or distant objects such as a couch at the back of a room, trash cans
 and an ATM.
 
-### What I learned
-
-- **Ask what's there before asking where.** Asked only to draw boxes, the
-  model marks every item it's asked about, even absent ones; it put a cat and
-  a remote on a person. Asking "which of these are in the image?" first, then
-  boxes only for those, removed the false alarms.
-- **Reading the image is most of the cost.** A 256 px frame took about half
-  as long as 512 px. Lowering llama.cpp's image-token limit made it almost 6×
-  slower instead: the frame got split into tiles (1,725 tokens instead of 299).
-- **Boxes on wide frames are coarse.** A 16:9 frame at 512×286 is only about
-  144 image tokens. Re-asking on a crop around each box doubled the overlap
-  with the true position on a test frame (IoU 0.15 → 0.31).
-- **Benchmark with fresh frames.** Repeating the same frame looked 6× faster
-  because llama.cpp reused the cached image. A cached image isn't reused
-  across different questions for this model, so every question re-reads the
-  frame.
-- **Power is part of the design.** On a weak supply the Pi reported
-  under-voltage, dropped to 600 MHz and ran 2.3–2.5× slower (6.6 tokens/s
-  reading, 77–92 s per look).
-
 ### Where it fits
 
 - Periodic checks in stores and facilities: is the wet floor sign out, are
